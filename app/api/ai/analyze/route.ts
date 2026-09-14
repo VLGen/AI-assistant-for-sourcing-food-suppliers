@@ -270,7 +270,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return new Response(stream, {
+    return new Response(responseStream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
