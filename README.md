@@ -17,7 +17,6 @@ MVP-сервис подбора поставщиков food-продукции �
 - База данных — PostgreSQL
 - Prisma работает через `postgresql` provider.
 - AI API использует vsegpt, совместимый с OpenAI `chat/completions`.
-- Для локальной разработки база поднимается через Docker Compose.
 
 ## Требования
 
