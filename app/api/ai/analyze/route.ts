@@ -18,7 +18,9 @@ const OPENROUTER_FALLBACK_MODELS = [
   "openai/gpt-4o-mini",
   "meta-llama/llama-3.1-8b-instruct",
 ].filter((value, index, array) => value && array.indexOf(value) === index) as string[];
-export const maxDuration = 60; // секунд
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const maxDuration = 60;
 export const runtime = 'nodejs';
 
 async function streamOpenRouter({
