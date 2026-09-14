@@ -1,7 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-
-type LogInput = {
+type LogPayload = {
   model: string;
   promptLength: number;
   responseLength: number;
@@ -10,27 +7,29 @@ type LogInput = {
   error?: string;
 };
 
-export function logAIRequest({
-  model,
-  promptLength,
-  responseLength,
-  durationMs,
-  success,
-  error,
-}: LogInput) {
-  const logDir = path.join(process.cwd(), "logs");
-  const logFile = path.join(logDir, "ai.jsonl");
-
+export function logAIRequest(payload: LogPayload) {
   const entry = {
+    ...payload,
     timestamp: new Date().toISOString(),
-    model,
-    promptLength,
-    responseLength,
-    durationMs,
-    success,
-    error: error ?? null,
   };
 
-  fs.mkdirSync(logDir, { recursive: true });
-  fs.appendFileSync(logFile, `${JSON.stringify(entry)}\n`, "utf8");
+  // Всегда пишем в console — это работает и локально, и на Vercel
+  if (payload.success) {
+    console.log("[ai]", JSON.stringify(entry));
+  } else {
+    console.error("[ai]", JSON.stringify(entry));
+  }
+
+  // Пишем в файл только локально и только если это возможно
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      const fs = require("node:fs");
+      const path = require("node:path");
+      const dir = path.join(process.cwd(), "logs");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.appendFileSync(path.join(dir, "ai.jsonl"), JSON.stringify(entry) + "\n");
+    } catch {
+      // молча игнорируем — лог в файл не критичен
+    }
+  }
 }
