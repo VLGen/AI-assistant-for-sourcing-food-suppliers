@@ -84,90 +84,38 @@ export function AIAnalysisPanel({ supplierIds, query }: Props) {
   }, [isLoading, result, streamText]);
   
   const runAnalysis = async () => {
-    streamTextRef.current = "";
-    setStreamText("");
-    if (!supplierIds.length) return;
+  if (!supplierIds.length) return;
 
-    setIsLoading(true);
-    setError(null);
-    setResult(null);
-    setStreamText("");
-    setElapsedMs(null);
+  setIsLoading(true);
+  setError(null);
+  setResult(null);
+  setElapsedMs(null);
 
-    const startedAt = performance.now();
+  const startedAt = performance.now();
 
-    try {
-      const response = await fetch("/api/ai/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: draftQuery.trim() || "Подберите лучших поставщиков по качеству, цене и срокам поставки.",
-          supplierIds,
-        }),
-      });
+  try {
+    const response = await fetch("/api/ai/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: draftQuery.trim() || "Подберите лучших поставщиков по качеству, цене и срокам поставки.",
+        supplierIds,
+      }),
+    });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(payload.error ?? "Не удалось запустить AI-анализ");
-      }
-
-      if (!response.body) {
-        throw new Error("Поток ответа недоступен");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split(/\n\n/);
-        buffer = parts.pop() ?? "";
-
-        for (const part of parts) {
-          const trimmed = part.trim();
-          if (!trimmed.startsWith("data:")) continue;
-
-          const raw = trimmed.replace(/^data:\s*/, "");
-          if (!raw) continue;
-
-          try {
-            const payload = JSON.parse(raw) as {
-              type?: "delta" | "done" | "error";
-              content?: string;
-              result?: AnalysisResult;
-              message?: string;
-            };
-
-            if (payload.type === "delta" && payload.content) {
-              streamTextRef.current += payload.content;
-              setStreamText(streamTextRef.current);
-            }
-
-            if (payload.type === "done" && payload.result) {
-              setResult(payload.result);
-              setElapsedMs(Math.round(performance.now() - startedAt));
-              setModel("Qwen 3 14B");
-            }
-
-            if (payload.type === "error") {
-              throw new Error(payload.message ?? "Ошибка AI-анализа");
-            }
-          } catch {
-              // промежуточный чанк не JSON — это нормально
-          }
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка анализа");
-      setElapsedMs(Math.round(performance.now() - startedAt));
-    } finally {
-      setIsLoading(false);
+    const data = (await response.json()) as AnalysisResult | { error: string };
+    if (!response.ok) {
+      throw new Error((data as { error?: string }).error ?? "Ошибка AI-анализа");
     }
-  };   // ← закрываем runAnalysis
+
+    setResult(data as AnalysisResult);
+    setElapsedMs(Math.round(performance.now() - startedAt));
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Ошибка анализа");
+  } finally {
+    setIsLoading(false);
+  }
+};   // ← закрываем runAnalysis
 
   const copyDraft = async () => {
     if (!result?.draftMessage) return;
