@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AIAnalysisPanel } from "@/components/ai-analysis-panel";
 
+export const dynamic = "force-dynamic";
+
 type Supplier = {
   id: string;
   name: string;

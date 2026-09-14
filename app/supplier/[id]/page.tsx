@@ -5,6 +5,8 @@ import { AddToCompareButton } from "@/components/add-to-compare-button";
 import { SupplierNotes } from "@/components/supplier-notes";
 import { CompareProvider } from "@/components/compare-context";
 
+export const dynamic = "force-dynamic";
+
 function parseJsonArray(value?: string | null): string[] {
   if (!value) return [];
 

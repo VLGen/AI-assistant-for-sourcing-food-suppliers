@@ -6,6 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CompareProvider, useCompare } from "@/components/compare-context";
 import { SupplierCard } from "@/components/supplier-card";
 
+export const dynamic = "force-dynamic";
+
 type Supplier = {
   id: string;
   name: string;

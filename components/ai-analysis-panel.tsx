@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type AnalysisResult = {
   summary: string;
@@ -45,6 +45,7 @@ export function AIAnalysisPanel({ supplierIds, query }: Props) {
   const [model, setModel] = useState<string>("Qwen 3 14B");
   const [suppliers, setSuppliers] = useState<SupplierMeta[]>([]);
   const [draftQuery, setDraftQuery] = useState(query ?? "");
+  const streamTextRef = useRef("");
 
   useEffect(() => {
     if (!supplierIds.length) return;
@@ -67,7 +68,24 @@ export function AIAnalysisPanel({ supplierIds, query }: Props) {
     setDraftQuery(query ?? "");
   }, [query]);
 
+  useEffect(() => {
+    if (isLoading) return;          // ещё идёт стрим
+    if (result) return;             // результат уже установлен
+    if (!streamText) return;        // нечего парсить
+
+    try {
+      const parsed = JSON.parse(streamText) as AnalysisResult;
+      if (parsed?.summary && Array.isArray(parsed.perSupplier)) {
+        setResult(parsed);
+      }
+    } catch {
+      // не JSON — оставляем как есть (сырой текст)
+    }
+  }, [isLoading, result, streamText]);
+  
   const runAnalysis = async () => {
+    streamTextRef.current = "";
+    setStreamText("");
     if (!supplierIds.length) return;
 
     setIsLoading(true);
@@ -125,7 +143,8 @@ export function AIAnalysisPanel({ supplierIds, query }: Props) {
             };
 
             if (payload.type === "delta" && payload.content) {
-              setStreamText((current) => `${current}${payload.content}`);
+              streamTextRef.current += payload.content;
+              setStreamText(streamTextRef.current);
             }
 
             if (payload.type === "done" && payload.result) {
@@ -137,11 +156,8 @@ export function AIAnalysisPanel({ supplierIds, query }: Props) {
             if (payload.type === "error") {
               throw new Error(payload.message ?? "Ошибка AI-анализа");
             }
-          } catch (parseError) {
-            setStreamText((current) => `${current}${raw}`);
-            if (parseError instanceof Error) {
-              setError(parseError.message);
-            }
+          } catch {
+              // промежуточный чанк не JSON — это нормально
           }
         }
       }
@@ -151,7 +167,7 @@ export function AIAnalysisPanel({ supplierIds, query }: Props) {
     } finally {
       setIsLoading(false);
     }
-  };
+  };   // ← закрываем runAnalysis
 
   const copyDraft = async () => {
     if (!result?.draftMessage) return;
