@@ -1,0 +1,43 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Supplier {
+  id            String   @id @default(cuid())
+  name          String
+  categories    String
+  region        String
+  city          String
+  website       String?
+  contactEmail  String?
+  contactPhone  String?
+  sourceUrl     String?
+  minOrder      String?
+  priceRange    String?
+  certificates  String
+  deliveryTerms String?
+  workRegion    String
+  notes         String?
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  userNotes     Note[]
+}
+
+model Note {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  text       String
+  createdAt  DateTime @default(now())
+}
+
+model Shortlist {
+  id          String   @id @default(cuid())
+  supplierIds String
+  createdAt   DateTime @default(now())
+}
