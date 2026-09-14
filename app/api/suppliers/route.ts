@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { normalizeSupplier, preScore } from "@/lib/score";
 import type { SupplierQuery } from "@/lib/types";
 
+console.log("DB URL starts with:", process.env.DATABASE_URL?.slice(0, 30));
+
 function parseQueryArray(value: string | string[] | undefined): string[] {
   if (!value) return [];
   if (Array.isArray(value)) return value.flatMap((item) => item.split(",")).map((item) => item.trim()).filter(Boolean);
